@@ -26,15 +26,32 @@ class Mollie extends Component
 
     public function init(): void
     {
-        $this->mollie = new \Mollie\Api\MollieApiClient();
-        $this->mollie->setApiKey(App::parseEnv(ConfigHelper::localizedValue(MolliePayments::$plugin->getSettings()->apiKey)));
+        $this->mollie = $this->getMollieClient();
         $this->baseUrl = Craft::$app->getSites()->getCurrentSite()->getBaseUrl();
+    }
+
+    public function getMollieClient($formHandle = null)
+    {
+        $mollie = new MollieApiClient();
+
+        try {
+            if ($formHandle && MolliePayments::getInstance()->getSettings()->apiKeyPerForm) {
+                $key = MolliePayments::getInstance()->getSettings()->apiKeyPerForm[$formHandle];
+            } else {
+                $key = App::parseEnv(ConfigHelper::localizedValue(MolliePayments::$plugin->getSettings()->apiKey));
+            }
+        } catch (\Exception $e) {
+            Craft::error($e->getMessage(), __METHOD__);
+            $key = App::parseEnv(ConfigHelper::localizedValue(MolliePayments::$plugin->getSettings()->apiKey));
+        }
+
+        $mollie->setApiKey($key);
+        return $mollie;
     }
 
     public function generatePayment(Payment $payment, $redirect, $extraMeta = [])
     {
         $paymentForm = MolliePayments::getInstance()->forms->getFormByid($payment->formId);
-
 
         if ($paymentForm->descriptionFormat) {
             $description = Craft::$app->getView()->renderObjectTemplate($paymentForm->descriptionFormat, $payment);
@@ -62,7 +79,8 @@ class Mollie extends Component
 
         $metaData = array_merge($metaData, $extraMeta);
 
-        $authorization = $this->mollie->payments->create([
+        $mollie = $this->getMollieClient($paymentForm->handle);
+        $authorization = $mollie->payments->create([
             "amount" => [
                 "currency" => $paymentForm->currency,
                 "value" => number_format($payment->amount, 2, '.', ''), // You must send the correct number of decimals, thus we enforce the use of strings
@@ -99,7 +117,8 @@ class Mollie extends Component
             $description = "Order #{$subscription->id}";
         }
 
-        $response = $this->mollie->payments->create([
+        $mollie = $this->getMollieClient($form->handle);
+        $response = $mollie->payments->create([
             "amount" => [
                 "value" => number_format((float)$subscription->amount, 2, '.', ''),
                 "currency" => $form->currency,
@@ -145,7 +164,7 @@ class Mollie extends Component
 
         $subscriber = MolliePayments::$plugin->subscriber->getByEmail($element->email);
 
-        $customer = $this->getCustomer($subscriber->customerId);
+        $customer = $this->getCustomer($subscriber->customerId, $form->handle);
         $data = [
             "amount" => [
                 "value" => $element->amount,
@@ -172,7 +191,8 @@ class Mollie extends Component
     public function cancelSubscription(SubscriberRecord $subscriber, Subscription $subscription)
     {
         try {
-            $customer = $this->getCustomer($subscriber->customerId);
+            $form = MolliePayments::getInstance()->forms->getFormByid($subscription->formId);
+            $customer = $this->getCustomer($subscriber->customerId, $form->handle);
             $customer->cancelSubscription($subscription->subscriptionId);
             return true;
         } catch (\Exception $e) {
@@ -183,9 +203,10 @@ class Mollie extends Component
     /**
      * @throws \Mollie\Api\Exceptions\ApiException
      */
-    public function createCustomer($email): Customer
+    public function createCustomer($email, $formHandle): Customer
     {
-        $customer = $this->mollie->customers->create([
+        $mollie = $this->getMollieClient($formHandle);
+        $customer = $mollie->customers->create([
             "email" => $email,
         ]);
         return $customer;
@@ -194,23 +215,26 @@ class Mollie extends Component
     public function deleteCustomer($id): void
     {
         try {
+            //TODO
             $this->mollie->customers->delete($id);
         } catch (ApiException $e) {
             Craft::error($e->getMessage(), __METHOD__);
         }
     }
 
-    public function getStatus($orderId)
+    public function getStatus($orderId, $formHandle)
     {
-        return $this->mollie->payments->get($orderId);
+        $mollie = $this->getMollieClient($formHandle);
+        return $mollie->payments->get($orderId);
     }
 
     /**
      * @throws \Mollie\Api\Exceptions\ApiException
      */
-    public function getCustomer($id): Customer
+    public function getCustomer($id, $formHandle): Customer
     {
-        return $this->mollie->customers->get($id);
+        $mollie = $this->getMollieClient($formHandle);
+        return $mollie->customers->get($id);
     }
 
     public function validateInterval($interval): bool
