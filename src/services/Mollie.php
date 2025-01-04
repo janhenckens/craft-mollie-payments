@@ -33,11 +33,15 @@ class Mollie extends Component
     public function getMollieClient($formHandle = null)
     {
         $mollie = new MollieApiClient();
+        $key = null;
 
         try {
             if ($formHandle && MolliePayments::getInstance()->getSettings()->apiKeyPerForm) {
-                $key = MolliePayments::getInstance()->getSettings()->apiKeyPerForm[$formHandle];
-            } else {
+                if (isset(MolliePayments::getInstance()->getSettings()->apiKeyPerForm[$formHandle])) {
+                    $key = MolliePayments::getInstance()->getSettings()->apiKeyPerForm[$formHandle];
+                }
+            }
+            if (!$key) {
                 $key = App::parseEnv(ConfigHelper::localizedValue(MolliePayments::$plugin->getSettings()->apiKey));
             }
         } catch (\Exception $e) {
