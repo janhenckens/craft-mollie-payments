@@ -229,13 +229,14 @@ class PaymentController extends Controller
         $redirect = Craft::$app->getRequest()->getParam('redirect');
 
         $payment = Payment::findOne(['uid' => $uid]);
+        $form = MolliePayments::getInstance()->forms->getFormByid($payment->formId);
         $transaction = MolliePayments::getInstance()->transaction->getTransactionbyPayment($payment->id);
         if ($redirect != $transaction->redirect) {
             throw new InvalidArgumentException("Invalid redirect");
         }
 
         try {
-            $molliePayment = MolliePayments::getInstance()->mollie->getStatus($transaction->id);
+            $molliePayment = MolliePayments::getInstance()->mollie->getStatus($transaction->id, $form->handle);
             $this->redirect(UrlHelper::url($redirect, ['payment' => $uid, 'status' => $molliePayment->status]));
         } catch (\Exception $e) {
             throw new NotFoundHttpException('Payment not found', '404');
@@ -250,7 +251,9 @@ class PaymentController extends Controller
     {
         $id = Craft::$app->getRequest()->getRequiredParam('id');
         $transaction = MolliePayments::getInstance()->transaction->getTransactionbyId($id);
-        $molliePayment = MolliePayments::getInstance()->mollie->getStatus($id);
+        $paymentElement = Payment::findOne(['id' => $transaction->payment]);
+        $form = MolliePayments::getInstance()->forms->getFormByid($paymentElement->formId);
+        $molliePayment = MolliePayments::getInstance()->mollie->getStatus($id, $form->handle);
         MolliePayments::getInstance()->transaction->updateTransaction($transaction, $molliePayment);
         return;
     }

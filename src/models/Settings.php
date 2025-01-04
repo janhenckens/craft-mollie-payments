@@ -15,4 +15,6 @@ class Settings extends Model
     public string $manageSubscriptionEmailSubject = '';
 
     public string $manageSubscriptionRoute = '';
+
+    public ?array $apiKeyPerForm = null;
 }

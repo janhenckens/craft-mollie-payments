@@ -77,7 +77,7 @@ class SubscriptionController extends Controller
 
         $subscription->setScenario(Element::SCENARIO_LIVE);
 
-        $subscriber = MolliePayments::$plugin->subscriber->getOrCreateSubscriberByEmail($email);
+        $subscriber = MolliePayments::$plugin->subscriber->getOrCreateSubscriberByEmail($email, $paymentForm->handle);
         $subscription->customerId = $subscriber->customerId;
 
         if (!$subscription->validate()) {
