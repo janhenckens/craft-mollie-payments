@@ -199,7 +199,7 @@ class PaymentController extends Controller
         return $this->asCpScreen()
             ->title("Payment - {$form->title} - {$element->email}")
             ->crumbs([
-                ['label' => 'Payments', 'url' => UrlHelper::cpUrl('mollie-payments/payments')],
+                ['label' => 'Payments', 'url' => UrlHelper::cpUrl('mollie-payments')],
                 ['label' => $element->email, 'url' => $element->getCpEditUrl()],
             ])
             ->action('mollie-payments/payment/save-cp')
