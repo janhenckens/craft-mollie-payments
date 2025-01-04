@@ -34,6 +34,7 @@ return [
 
 If you're not using different sites but you still want to use different API keys for different forms, you can set the API key in the form settings. This will override the global API key setting.
 
+Make sure to still set the global or primary API key in the plugin settings, as you did before.
 ```php
 <?php
 
