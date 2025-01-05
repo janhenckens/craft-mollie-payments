@@ -28,3 +28,24 @@ return [
     ]   
 ];
 ```
+
+
+### API key per form
+
+If you're not using different sites but you still want to use different API keys for different forms, you can set the API key in the form settings. This will override the global API key setting.
+
+Make sure to still set the global or primary API key in the plugin settings, as you did before.
+```php
+<?php
+
+return [
+    'apiKey' => 'test_api_key',
+    'apiKeyPerForm' =>
+        [
+            'firstForm' => 'test_api_key',
+            'secondForm' => 'test_key_form_2' 
+        ]
+];
+
+
+```

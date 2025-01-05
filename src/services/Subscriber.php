@@ -28,7 +28,7 @@ class Subscriber extends Component
         return $model;
     }
 
-    public function getOrCreateSubscriberByEmail($email): SubscriberModel
+    public function getOrCreateSubscriberByEmail($email, $formHandle): SubscriberModel
     {
         $record = SubscriberRecord::findOne(['email' => $email]);
         if ($record) {
@@ -38,7 +38,7 @@ class Subscriber extends Component
         }
 
         /** @var Customer $customer */
-        $customer = MolliePayments::getInstance()->mollie->createCustomer($email);
+        $customer = MolliePayments::getInstance()->mollie->createCustomer($email, $formHandle);
         $model = new SubscriberModel();
         if (Craft::$app->getUser()->getIdentity()) {
             $model->userId = Craft::$app->getUser()->getIdentity()->id;
