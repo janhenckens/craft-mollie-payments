@@ -81,8 +81,6 @@ class SubscriptionController extends Controller
         $subscription->customerId = $subscriber->customerId;
 
         if (!$subscription->validate()) {
-            // TODO Remove this before release
-            dd($subscription->getErrors());
             // Send the payment back to the template
             Craft::$app->getUrlManager()->setRouteParams([
                 'subscription' => $subscription,
@@ -160,10 +158,11 @@ class SubscriptionController extends Controller
 
         $redirect = $request->getQueryParam('redirect');
         $element = Subscription::findOne(['uid' => $uid]);
+        $form = MolliePayments::getInstance()->forms->getFormByid($element->formId);
         $transaction = MolliePayments::$plugin->transaction->getTransactionbyPayment($element->id);
 
         try {
-            $molliePayment = MolliePayments::$plugin->mollie->getStatus($transaction->id);
+            $molliePayment = MolliePayments::$plugin->mollie->getStatus($transaction->id, $form->handle);
             $this->redirect(UrlHelper::url($redirect, ['subscription' => $uid, 'status' => $molliePayment->status]));
         } catch (\Exception $e) {
             throw new NotFoundHttpException('Payments not found', '404');
@@ -178,7 +177,9 @@ class SubscriptionController extends Controller
     {
         $id = Craft::$app->getRequest()->getRequiredParam('id');
         $transaction = MolliePayments::getInstance()->transaction->getTransactionbyId($id);
-        $molliePayment = MolliePayments::getInstance()->mollie->getStatus($id);
+        $element = Subscription::findOne(['id' => $transaction->payment]);
+        $form = MolliePayments::getInstance()->forms->getFormByid($element->formId);
+        $molliePayment = MolliePayments::getInstance()->mollie->getStatus($id, $form->handle);
 
         // If we have a subscription id, the payment belongs to an active subscription
         // So we need to create a new transaction for it.
@@ -283,7 +284,7 @@ class SubscriptionController extends Controller
         $page = $this->request->getQueryParam('page', 1);
         $baseUrl = 'mollie-payments/subscription/get-subscribers';
         $data = MolliePayments::getInstance()->subscriber->getAllSubscribers();
-        $subscribers = collect($data)->map(function($subscriber) {
+        $subscribers = collect($data)->map(function ($subscriber) {
             return [
                 'title' => $subscriber->email,
                 'id' => $subscriber->customerId,
@@ -335,8 +336,13 @@ class SubscriptionController extends Controller
 
     public function actionDeleteSubscriber()
     {
-        MolliePayments::getInstance()->mollie->deleteCustomer($this->request->getRequiredBodyParam('id'));
-        MolliePayments::getInstance()->subscriber->deleteById($this->request->getRequiredBodyParam('id'));
-        return $this->asJson(['success' => true]);
+        try {
+            MolliePayments::getInstance()->mollie->deleteCustomer($this->request->getRequiredBodyParam('id'));
+            MolliePayments::getInstance()->subscriber->deleteById($this->request->getRequiredBodyParam('id'));
+            return $this->asJson(['success' => true]);
+        } catch(\Throwable $e) {
+            Craft::error($e->getMessage(), MolliePayments::class);
+            return $this->asJson(['success' => false]);
+        }
     }
 }

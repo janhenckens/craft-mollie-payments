@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 5.2.0 - Unpublished
+## 5.2.1 - 2025-01-10
+### Fixed
+- Added missing form handle
+
+## 5.2.0 - 2025-01-04
 ### Added
 - Support for using a different API key per form
 ### Fixed
