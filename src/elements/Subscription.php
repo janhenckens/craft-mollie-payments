@@ -213,7 +213,8 @@ class Subscription extends Element
         if (!$this->customerId) {
             return null;
         }
-        return MolliePayments::getInstance()->mollie->getCustomer($this->customerId);
+        $form = $this->getForm();
+        return MolliePayments::getInstance()->mollie->getCustomer($this->customerId, $form->handle);
     }
 
     // Public Methods
