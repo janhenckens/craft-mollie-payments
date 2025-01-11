@@ -222,7 +222,6 @@ class SubscriptionController extends Controller
                 return $this->asSuccess("Transaction status updated", [], $redirect);
             }
             return $this->asSuccess("Transaction already up to date", [], $redirect);
-
         } catch (\Throwable $e) {
             return $this->asFailure("Something went wrong checking the status for this payment", [], $redirect);
         }
@@ -304,7 +303,7 @@ class SubscriptionController extends Controller
         $page = $this->request->getQueryParam('page', 1);
         $baseUrl = 'mollie-payments/subscription/get-subscribers';
         $data = MolliePayments::getInstance()->subscriber->getAllSubscribers();
-        $subscribers = collect($data)->map(function ($subscriber) {
+        $subscribers = collect($data)->map(function($subscriber) {
             return [
                 'title' => $subscriber->email,
                 'id' => $subscriber->customerId,
@@ -360,7 +359,7 @@ class SubscriptionController extends Controller
             MolliePayments::getInstance()->mollie->deleteCustomer($this->request->getRequiredBodyParam('id'));
             MolliePayments::getInstance()->subscriber->deleteById($this->request->getRequiredBodyParam('id'));
             return $this->asJson(['success' => true]);
-        } catch(\Throwable $e) {
+        } catch (\Throwable $e) {
             Craft::error($e->getMessage(), MolliePayments::class);
             return $this->asJson(['success' => false]);
         }
