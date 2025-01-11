@@ -1,4 +1,4 @@
-{% macro transactionRow(transaction, level, element) %}
+{% macro transactionRow(transaction, level, element, subscription) %}
 
     <tr class="infoRow">
         <td {{ 'Status'|t('mollie-payments') }}>
@@ -14,7 +14,12 @@
         </td>
         <td {{ 'Date'|t('mollie-payments') }}>{{ transaction.dateUpdated|date('j/m/Y H:i') }}</td>
         <td>
+
+            {% if subscription is defined %}
+            <a href="{{ actionUrl('mollie-payments/subscription/check-transaction-status', {'id': transaction.id, redirect: element.getCpEditUrl()}) }}">{{ "Check status"|t('mollie-payments') }}</a>
+            {% else %}
             <a href="{{ actionUrl('mollie-payments/payment/check-transaction-status', {'id': transaction.id, redirect: element.getCpEditUrl()}) }}">{{ "Check status"|t('mollie-payments') }}</a>
+            {% endif %}
         </td>
     </tr>
 
@@ -35,7 +40,7 @@
         </thead>
         <tbody>
         {% for transaction in transactions %}
-            {{ transactionRow(transaction, 0, element) }}
+            {{ transactionRow(transaction, 0, element, subscription) }}
         {% endfor %}
         </tbody>
     </table>

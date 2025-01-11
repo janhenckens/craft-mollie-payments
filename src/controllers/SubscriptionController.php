@@ -208,6 +208,26 @@ class SubscriptionController extends Controller
         }
     }
 
+
+    public function actionCheckTransactionStatus($id, $redirect)
+    {
+        try {
+            $transaction = MolliePayments::getInstance()->transaction->getTransactionbyId($id);
+            $element = Subscription::findOne(['id' => $transaction->payment]);
+            $form = MolliePayments::getInstance()->forms->getFormByid($element->formId);
+            $molliePayment = MolliePayments::getInstance()->mollie->getStatus($id, $form->handle);
+
+            if ($transaction->status !== $molliePayment->status) {
+                MolliePayments::getInstance()->transaction->updateTransaction($transaction, $molliePayment);
+                return $this->asSuccess("Transaction status updated", [], $redirect);
+            }
+            return $this->asSuccess("Transaction already up to date", [], $redirect);
+
+        } catch (\Throwable $e) {
+            return $this->asFailure("Something went wrong checking the status for this payment", [], $redirect);
+        }
+    }
+
     public function actionGetLinkForCustomer()
     {
         $email = $this->request->getRequiredBodyParam('email');
