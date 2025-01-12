@@ -265,13 +265,14 @@ class PaymentController extends Controller
             $element = Payment::findOne(['id' => $transaction->payment]);
             $form = MolliePayments::getInstance()->forms->getFormByid($element->formId);
             $molliePayment = MolliePayments::getInstance()->mollie->getStatus($id, $form->handle);
+
             if ($transaction->status !== $molliePayment->status) {
                 MolliePayments::getInstance()->transaction->updateTransaction($transaction, $molliePayment);
                 return $this->asSuccess("Transaction status updated", [], $redirect);
             }
             return $this->asSuccess("Transaction already up to date", [], $redirect);
         } catch (\Throwable $e) {
-            return $this->asFailure("Somethinng went wrong checking the status for this payment", [], $redirect);
+            return $this->asFailure("Something went wrong checking the status for this payment", [], $redirect);
         }
     }
 

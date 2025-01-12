@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 5.2.2 - 2025-01-11
+### Fixed
+- Fixed status check links for Subscription elements
+- Subscriptions now pass the correct start date to Mollie
+
 ## 5.2.1 - 2025-01-10
 ### Fixed
 - Added missing form handle
