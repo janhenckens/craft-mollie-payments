@@ -6,6 +6,7 @@ use Craft;
 use craft\base\Component;
 use craft\helpers\App;
 use craft\helpers\ConfigHelper;
+use craft\helpers\DateTimeHelper;
 use craft\helpers\UrlHelper;
 use Mollie\Api\Exceptions\ApiException;
 use Mollie\Api\MollieApiClient;
@@ -157,38 +158,44 @@ class Mollie extends Component
 
     public function createSubscription(Subscription $element)
     {
-        /** @var  $customer */
-        $form = MolliePayments::$plugin->forms->getFormByid($element->formId);
+        try {
+            /** @var  $customer */
+            $form = MolliePayments::$plugin->forms->getFormByid($element->formId);
 
-        if ($form->descriptionFormat) {
-            $description = Craft::$app->getView()->renderObjectTemplate($form->descriptionFormat, $element);
-        } else {
-            $description = "Order #{$element->id}";
-        }
+            if ($form->descriptionFormat) {
+                $description = Craft::$app->getView()->renderObjectTemplate($form->descriptionFormat, $element);
+            } else {
+                $description = "Order #{$element->id}";
+            }
 
-        $subscriber = MolliePayments::$plugin->subscriber->getByEmail($element->email);
+            $subscriber = MolliePayments::$plugin->subscriber->getByEmail($element->email);
 
-        $customer = $this->getCustomer($subscriber->customerId, $form->handle);
-        $data = [
-            "amount" => [
-                "value" => $element->amount,
-                "currency" => $form->currency,
-            ],
-            "interval" => $element->interval,
-            "description" => $description,
-            "webhookUrl" => "{$this->baseUrl}mollie-payments/subscription/webhook",
+            $startDate = DateTimeHelper::now()->modify("+ {$element->interval}");
+            $customer = $this->getCustomer($subscriber->customerId, $form->handle);
+            $data = [
+                "amount" => [
+                    "value" => $element->amount,
+                    "currency" => $form->currency,
+                ],
+                "startDate" => $startDate->format('YYYY-MM-DD'),
+                "interval" => $element->interval,
+                "description" => $description,
+                "webhookUrl" => "{$this->baseUrl}mollie-payments/subscription/webhook",
+            ];
 
-        ];
+            if ($element->times) {
+                $data["times"] = $element->times;
+            }
 
-        if ($element->times) {
-            $data["times"] = $element->times;
-        }
-
-        $response = $customer->createSubscription($data);
-        if ($response) {
-            $element->subscriptionStatus = "active";
-            $element->subscriptionId = $response->id;
-            Craft::$app->getElements()->saveElement($element);
+            $response = $customer->createSubscription($data);
+            if ($response) {
+                $element->subscriptionStatus = "active";
+                $element->subscriptionId = $response->id;
+                Craft::$app->getElements()->saveElement($element);
+            }
+        } catch (\Throwable $e) {
+            Craft::error($e->getMessage(), __METHOD__);
+            return;
         }
     }
 

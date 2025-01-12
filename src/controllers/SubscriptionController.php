@@ -204,7 +204,6 @@ class SubscriptionController extends Controller
             && !$molliePayment->subscriptionId
         ) {
             MolliePayments::$plugin->mollie->createSubscription($subscriptionElement);
-            return;
         }
     }
 
