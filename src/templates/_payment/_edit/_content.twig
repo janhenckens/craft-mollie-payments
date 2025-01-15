@@ -10,7 +10,11 @@
 <hr>
 <div>
     <h2>{{ "Transactions"|t }}</h2>
-    {% include 'mollie-payments/_includes/_transactions.twig' with {transactions : transactions, element: element } only %}
+    {% include 'mollie-payments/_includes/_transactions.twig' with {
+        transactions : transactions,
+        element: element,
+        subscription: false,
+    } only %}
 </div>
 
 {% hook 'cp.payments.edit.content' %}
